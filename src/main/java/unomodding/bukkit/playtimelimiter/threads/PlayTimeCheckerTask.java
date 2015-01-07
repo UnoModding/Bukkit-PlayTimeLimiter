@@ -1,5 +1,5 @@
 /**
- * Copyright 2013-2014 by UnoModding, ATLauncher and Contributors
+ * Copyright 2013-2015 by UnoModding, ATLauncher and Contributors
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.
@@ -7,7 +7,6 @@
 package unomodding.bukkit.playtimelimiter.threads;
 
 import java.io.File;
-import java.util.TimerTask;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -16,14 +15,13 @@ import unomodding.bukkit.playtimelimiter.PlayTimeLimiter;
 import unomodding.bukkit.playtimelimiter.utils.FileUtils;
 import unomodding.bukkit.playtimelimiter.utils.Timestamper;
 
-public class PlayTimeCheckerTask extends TimerTask {
+public class PlayTimeCheckerTask implements Runnable {
 	private final PlayTimeLimiter plugin;
 
 	public PlayTimeCheckerTask(PlayTimeLimiter instance) {
 		this.plugin = instance;
 	}
 
-	@Override
 	public void run() {
 		for (Player player : this.plugin.getServer().getOnlinePlayers()) {
 			int timeLeft = this.plugin.getTimeAllowedInSeconds(player

@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 by UnoModding, RyanTheAllmighty and Contributors
+ * Copyright 2014-2015 by UnoModding, RyanTheAllmighty and Contributors
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.
@@ -14,7 +14,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Timer;
 import java.util.UUID;
 
 import org.bukkit.ChatColor;
@@ -44,8 +43,6 @@ public class PlayTimeLimiter extends JavaPlugin {
 	private Map<String, Boolean> seenWarningMessages = new HashMap<String, Boolean>();
 
 	private boolean shutdownHookAdded = false;
-	private Timer savePlayTimeTimer = null;
-	private Timer checkPlayTimeTimer = null;
 	private boolean started = false;
 	private final Gson GSON = new Gson();
 
@@ -94,14 +91,14 @@ public class PlayTimeLimiter extends JavaPlugin {
 			getConfig().set("timeTravels", true);
 			saveConfig();
 		}
-		if (!getConfig().isSet("timeCap")) {
+		/*if (!getConfig().isSet("timeCap")) {
 			getConfig().set("timeCap", true);
 			saveConfig();
 		}
 		if (!getConfig().isSet("timeCapValue")) {
 			getConfig().set("timeCapValue", 18000);
 			saveConfig();
-		}
+		}*/
 
 		getLogger().info(
 				String.format("Server started at %s which was %s seconds ago!",
@@ -118,18 +115,13 @@ public class PlayTimeLimiter extends JavaPlugin {
 		// Load the playtime from file
 		this.loadPlayTime();
 
-		if (savePlayTimeTimer == null) {
-			this.savePlayTimeTimer = new Timer();
-			this.savePlayTimeTimer.scheduleAtFixedRate(new PlayTimeSaverTask(
-					this), 30000,
-					getConfig().getInt("secondsBetweenPlayTimeSaving") * 1000);
-		}
-		if (checkPlayTimeTimer == null) {
-			this.checkPlayTimeTimer = new Timer();
-			this.checkPlayTimeTimer.scheduleAtFixedRate(
-					new PlayTimeCheckerTask(this), 30000,
-					getConfig().getInt("secondsBetweenPlayTimeChecks") * 1000);
-		}
+		this.getServer().getScheduler().scheduleSyncRepeatingTask(this,
+			    new PlayTimeSaverTask(this), 30000,
+			        getConfig().getInt("secondsBetweenPlayTimeSaving") * 1000);
+		this.getServer().getScheduler().scheduleSyncRepeatingTask(this,
+				new PlayTimeCheckerTask(this), 30000,
+				getConfig().getInt("secondsBetweenPlayTimeChecks") * 1000);
+
 
 		try {
 			Metrics metrics = new Metrics(this);
@@ -232,6 +224,10 @@ public class PlayTimeLimiter extends JavaPlugin {
 				(int) (System.currentTimeMillis() / 1000));
 	}
 
+	public void setPlayerLoggedOut(UUID uuid) {
+		setPlayerLoggedOut(uuid.toString());
+	}
+
 	private void setPlayerLoggedOut(String uuid) {
 		if (this.timeLoggedIn.containsKey(uuid)) {
 			int timePlayed = (int) ((System.currentTimeMillis() / 1000) - this.timeLoggedIn
@@ -258,10 +254,6 @@ public class PlayTimeLimiter extends JavaPlugin {
 		if (this.seenWarningMessages.containsKey(uuid + ":300")) {
 			this.seenWarningMessages.remove(uuid + ":300");
 		}
-	}
-
-	public void setPlayerLoggedOut(UUID uuid) {
-		setPlayerLoggedOut(uuid);
 	}
 
 	public boolean hasPlayerSeenMessage(UUID uuid, int time) {
