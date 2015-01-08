@@ -37,7 +37,7 @@ import com.google.gson.reflect.TypeToken;
  * @author Jamie Mansfield <https://github.com/lexware>
  */
 public class PlayTimeLimiter extends JavaPlugin {
-	private final PlayerListener playerListener = new PlayerListener(this);
+	private final PlayTimeListener playerListener = new PlayTimeListener(this);
 	private Map<String, Integer> timePlayed = new HashMap<String, Integer>();
 	private Map<String, Integer> timeLoggedIn = new HashMap<String, Integer>();
 	private Map<String, Boolean> seenWarningMessages = new HashMap<String, Boolean>();
@@ -185,8 +185,8 @@ public class PlayTimeLimiter extends JavaPlugin {
 
 	public void addPlayTime(UUID uuid, int seconds)
 			throws UnknownPlayerException {
-		if (this.timePlayed.containsKey(uuid)) {
-			this.timePlayed.put(uuid.toString(), this.timePlayed.get(uuid)
+		if (this.timePlayed.containsKey(uuid.toString())) {
+			this.timePlayed.put(uuid.toString(), this.timePlayed.get(uuid.toString())
 					- seconds);
 		} else {
 			throw new UnknownPlayerException(uuid);
@@ -195,9 +195,17 @@ public class PlayTimeLimiter extends JavaPlugin {
 
 	public void removePlayTime(UUID uuid, int seconds)
 			throws UnknownPlayerException {
-		if (this.timePlayed.containsKey(uuid)) {
-			this.timePlayed.put(uuid.toString(), this.timePlayed.get(uuid)
+		if (this.timePlayed.containsKey(uuid.toString())) {
+			this.timePlayed.put(uuid.toString(), this.timePlayed.get(uuid.toString())
 					+ seconds);
+		} else {
+			throw new UnknownPlayerException(uuid);
+		}
+	}
+
+	public void setPlayTime(UUID uuid, int seconds) throws UnknownPlayerException {
+		if(this.timePlayed.containsKey(uuid.toString())) {
+			this.timePlayed.put(uuid.toString(), seconds);
 		} else {
 			throw new UnknownPlayerException(uuid);
 		}
@@ -205,18 +213,18 @@ public class PlayTimeLimiter extends JavaPlugin {
 
 	public int getPlayerPlayTime(UUID uuid) {
 		int timePlayed = 0;
-		if (this.timePlayed.containsKey(uuid)) {
-			timePlayed += this.timePlayed.get(uuid);
+		if (this.timePlayed.containsKey(uuid.toString())) {
+			timePlayed += this.timePlayed.get(uuid.toString());
 		}
-		if (this.timeLoggedIn.containsKey(uuid)) {
+		if (this.timeLoggedIn.containsKey(uuid.toString())) {
 			timePlayed += (int) ((System.currentTimeMillis() / 1000) - this.timeLoggedIn
-					.get(uuid));
+					.get(uuid.toString()));
 		}
 		return timePlayed;
 	}
 
 	public void setPlayerLoggedIn(UUID uuid) {
-		if (!this.timePlayed.containsKey(uuid)) {
+		if (!this.timePlayed.containsKey(uuid.toString())) {
 			this.timePlayed.put(uuid.toString(), 0);
 			this.savePlayTime();
 		}
@@ -257,8 +265,8 @@ public class PlayTimeLimiter extends JavaPlugin {
 	}
 
 	public boolean hasPlayerSeenMessage(UUID uuid, int time) {
-		if (this.seenWarningMessages.containsKey(uuid + ":" + time)) {
-			return this.seenWarningMessages.get(uuid + ":" + time);
+		if (this.seenWarningMessages.containsKey(uuid.toString() + ":" + time)) {
+			return this.seenWarningMessages.get(uuid.toString() + ":" + time);
 		} else {
 			return false;
 		}

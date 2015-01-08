@@ -102,7 +102,7 @@ public class PlayTimeCommand implements CommandExecutor {
 			}
 			if (!sender.hasPermission("playtimelimiter.playtime.remove")) {
 				sender.sendMessage(ChatColor.RED
-						+ "You don't have permission to remove time from a players playtime!!");
+						+ "You don't have permission to remove time from a players playtime!");
 				return false;
 			} else {
 				try {
@@ -112,6 +112,36 @@ public class PlayTimeCommand implements CommandExecutor {
 					sender.sendMessage(ChatColor.GREEN + "Removed "
 							+ Integer.parseInt(args[2])
 							+ " seconds of playtime from " + args[1]);
+				} catch (NumberFormatException e) {
+					e.printStackTrace();
+					sender.sendMessage(ChatColor.RED
+							+ "Invalid number of seconds given!");
+					return false;
+				} catch (UnknownPlayerException e) {
+					e.printStackTrace();
+					sender.sendMessage(ChatColor.RED + e.getMessage());
+					return false;
+				}
+				return true;
+			}
+		} else if (args[0].equalsIgnoreCase("set") && args.length == 3) {
+			if (!plugin.hasStarted()) {
+				sender.sendMessage(ChatColor.RED
+						+ "Playtime hasn't started yet!");
+				return false;
+			}
+			if (!sender.hasPermission("playtimelimiter.playtime.set")) {
+				sender.sendMessage(ChatColor.RED
+						+ "You don't have permission to set a player's playtime!");
+				return false;
+			} else {
+				try {
+					plugin.setPlayTime(
+							plugin.getServer().getPlayerExact(args[1])
+									.getUniqueId(), Integer.parseInt(args[2]));
+					sender.sendMessage(ChatColor.GREEN + "Set "
+							+ args[1]
+							+ " playtime to " + Integer.parseInt(args[2]));
 				} catch (NumberFormatException e) {
 					e.printStackTrace();
 					sender.sendMessage(ChatColor.RED
@@ -193,6 +223,11 @@ public class PlayTimeCommand implements CommandExecutor {
 			usage.add(ChatColor.AQUA + "/playtime add <user> <time>"
 					+ ChatColor.RESET
 					+ " - Add time in seconds to the user's playtime.");
+		}
+		if (sender.hasPermission("playtimelimiter.playtim.set")) {
+			usage.add(ChatColor.AQUA + "/playtime set <user> <time>"
+					+ ChatColor.RESET
+					+ " - Set a player's playtime in seconds.");
 		}
 		if (sender.hasPermission("playtimelimiter.playtime.check.others")) {
 			usage.add(ChatColor.AQUA

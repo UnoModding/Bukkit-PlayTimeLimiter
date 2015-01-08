@@ -11,6 +11,7 @@ permissions:
     children:
       playtimelimiter.playtime.add: true
       playtimelimiter.playtime.remove: true
+      playtimelimiter.playtime.set: true
       playtimelimiter.playtime.check.self: true
       playtimelimiter.playtime.check.others: true
       playtimelimiter.playtime.start: true
@@ -20,6 +21,9 @@ permissions:
     default: op
   playtimelimiter.playtime.remove:
     description: Gives access to be able to remove time from a players play time.
+    default: op
+  playtimelimiter.playtime.set:
+    description: Set a player's playtime in seconds.
     default: op
   playtimelimiter.playtime.check.self:
     description: Gives access to the /playtime check command to check own playtime.

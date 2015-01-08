@@ -17,10 +17,10 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import unomodding.bukkit.playtimelimiter.utils.FileUtils;
 import unomodding.bukkit.playtimelimiter.utils.Timestamper;
 
-public class PlayerListener implements Listener {
+public class PlayTimeListener implements Listener {
 	private final PlayTimeLimiter plugin;
 
-	public PlayerListener(PlayTimeLimiter instance) {
+	public PlayTimeListener(PlayTimeLimiter instance) {
 		this.plugin = instance;
 	}
 
