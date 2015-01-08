@@ -273,7 +273,7 @@ public class PlayTimeLimiter extends JavaPlugin {
 	}
 
 	public void sentPlayerWarningMessage(UUID uuid, int time) {
-		this.seenWarningMessages.put(uuid + ":" + time, true);
+		this.seenWarningMessages.put(uuid.toString() + ":" + time, true);
 	}
 
 	public boolean start() {
