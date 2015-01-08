@@ -48,7 +48,11 @@ public class PlayTimeLimiter extends JavaPlugin {
 
 	@Override
 	public void onDisable() {
-		this.savePlayTime(); // Save the playtime to file on plugin disable
+		// Save the playtime to file on plugin disable
+		this.savePlayTime();
+
+		// Remove tasks from Scheduler
+		this.getServer().getScheduler().cancelTasks(this);
 	}
 
 	@Override
@@ -66,7 +70,9 @@ public class PlayTimeLimiter extends JavaPlugin {
 		pm.registerEvents(playerListener, this);
 
 		// Register our commands
-		getCommand("playtime").setExecutor(new PlayTimeCommand(this));
+		PlayTimeCommand playTimeCommand = new PlayTimeCommand(this);
+		getCommand("playtime").setExecutor(playTimeCommand);
+		getCommand("playtime").setTabCompleter(playTimeCommand);
 
 		if (getConfig().isSet("timeStarted")) {
 			this.started = true;

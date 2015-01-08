@@ -11,13 +11,14 @@ import java.util.List;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 import unomodding.bukkit.playtimelimiter.exceptions.UnknownPlayerException;
+import unomodding.bukkit.playtimelimiter.utils.TabCompleteHelper;
 
-public class PlayTimeCommand implements CommandExecutor {
+public class PlayTimeCommand implements TabExecutor {
 	private final PlayTimeLimiter plugin;
 
 	public PlayTimeCommand(PlayTimeLimiter plugin) {
@@ -206,6 +207,20 @@ public class PlayTimeCommand implements CommandExecutor {
 		this.printUsage(sender);
 
 		return false;
+	}
+
+	@Override
+	public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] parameters) {
+		if (parameters.length == 1) {
+			return TabCompleteHelper.matchTo(parameters, new String[] { "start", "stop", "add", "remove", "set",
+					"check" });
+		} else if (parameters.length == 2
+				&& (parameters[1].equals("add") || parameters[1].equals("remove") || parameters[1].equals("check")
+				|| parameters[1].equals("set"))) {
+			return TabCompleteHelper.matchTo(parameters, TabCompleteHelper.getKnownPlayerNames());
+		} else {
+			return null;
+		}
 	}
 
 	public void printUsage(CommandSender sender) {
