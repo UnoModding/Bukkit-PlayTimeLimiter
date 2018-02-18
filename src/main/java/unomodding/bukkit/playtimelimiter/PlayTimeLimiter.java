@@ -6,7 +6,15 @@
  */
 package unomodding.bukkit.playtimelimiter;
 
+import static unomodding.bukkit.playtimelimiter.Configuration.Options.INITIAL_TIME;
+import static unomodding.bukkit.playtimelimiter.Configuration.Options.SECONDS_BETWEEN_CHECKS;
+import static unomodding.bukkit.playtimelimiter.Configuration.Options.SECONDS_BETWEEN_SAVES;
+import static unomodding.bukkit.playtimelimiter.Configuration.Options.TIME_PER_DAY;
+import static unomodding.bukkit.playtimelimiter.Configuration.Options.TIME_TRAVELS;
+
+import com.google.common.primitives.Ints;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -24,9 +32,11 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
 
 /**
  * PlayTimeLimiter plugin for Bukkit
@@ -35,14 +45,19 @@ import java.util.UUID;
  * @author Jamie Mansfield <https://github.com/lexware>
  */
 public class PlayTimeLimiter extends JavaPlugin {
+
+	private static final Gson GSON = new GsonBuilder()
+			.setPrettyPrinting()
+			.create();
+
 	private final PlayTimeListener playerListener = new PlayTimeListener(this);
-	private Map<String, Integer> timePlayed = new HashMap<String, Integer>();
-	private Map<String, Integer> timeLoggedIn = new HashMap<String, Integer>();
-	private Map<String, Boolean> seenWarningMessages = new HashMap<String, Boolean>();
+	private final Configuration configuration = new Configuration(this);
+	private Map<String, Integer> timePlayed = new HashMap<>();
+	private Map<String, Integer> timeLoggedIn = new HashMap<>();
+	private Map<String, Boolean> seenWarningMessages = new HashMap<>();
 
 	private boolean shutdownHookAdded = false;
 	private boolean started = false;
-	private final Gson GSON = new Gson();
 
 	@Override
 	public void onDisable() {
@@ -72,71 +87,46 @@ public class PlayTimeLimiter extends JavaPlugin {
 		getCommand("playtime").setExecutor(playTimeCommand);
 		getCommand("playtime").setTabCompleter(playTimeCommand);
 
-		if (getConfig().isSet("timeStarted")) {
-			this.started = true;
-		}
-		if (!getConfig().isSet("initialTime")) {
-			getConfig().set("initialTime", 28800);
-			saveConfig();
-		}
-		if (!getConfig().isSet("timePerDay")) {
-			getConfig().set("timePerDay", 3600);
-			saveConfig();
-		}
-		if (!getConfig().isSet("secondsBetweenPlayTimeChecks")) {
-			getConfig().set("secondsBetweenPlayTimeChecks", 10);
-			saveConfig();
-		}
-		if (!getConfig().isSet("secondsBetweenPlayTimeSaving")) {
-			getConfig().set("secondsBetweenPlayTimeSaving", 600);
-			saveConfig();
-		}
-		if (!getConfig().isSet("timeTravels")) {
-			getConfig().set("timeTravels", true);
-			saveConfig();
-		}
-		/*if (!getConfig().isSet("timeCap")) {
-			getConfig().set("timeCap", true);
-			saveConfig();
-		}
-		if (!getConfig().isSet("timeCapValue")) {
-			getConfig().set("timeCapValue", 18000);
-			saveConfig();
-		}*/
+		// Config
+		this.started = this.getConfig().isSet(Configuration.Options.TIME_STARTED);
+		this.configuration.ensureDefaults();
 
-		getLogger().info(
-				String.format("Server started at %s which was %s seconds ago!",
-						getConfig().get("timeStarted"),
-						this.secondsToDaysHoursSecondsString((int) ((System
-								.currentTimeMillis() / 1000) - getConfig()
-								.getInt("timeStarted")))));
+		// The server started log message
+		this.getLogger().info(
+				String.format("Server started at %s which was %s ago!",
+						this.configuration.getTimeStarted(),
+						this.secondsToDaysHoursSecondsString(
+								Ints.checkedCast(Instant.now().getEpochSecond()) - this.configuration.getTimeStarted()
+						)
+				)
+		);
 
-		PluginDescriptionFile pdfFile = this.getDescription();
-		getLogger().info(
-				pdfFile.getName() + " version " + pdfFile.getVersion()
-						+ " is enabled!");
+		// PlayTimeLimiter v{} is enabled!
+		final PluginDescriptionFile descriptor = this.getDescription();
+		getLogger().info("PlayTimeLimiter v" + descriptor.getVersion() + " is enabled!");
 
 		// Load the playtime from file
 		this.loadPlayTime();
 
+		// Tasks
 		this.getServer().getScheduler().scheduleSyncRepeatingTask(this,
 			    new PlayTimeSaverTask(this), 30000,
-			        getConfig().getInt("secondsBetweenPlayTimeSaving") * 1000);
+			        getConfig().getInt(SECONDS_BETWEEN_SAVES) * 1000);
 		this.getServer().getScheduler().scheduleSyncRepeatingTask(this,
 				new PlayTimeCheckerTask(this), 30000,
-				getConfig().getInt("secondsBetweenPlayTimeChecks") * 1000);
+				getConfig().getInt(SECONDS_BETWEEN_CHECKS) * 1000);
 
-
+		// Metrics
 		try {
-			MetricsLite metrics = new MetricsLite(this);
+			final MetricsLite metrics = new MetricsLite(this);
 			metrics.start();
-		} catch (IOException e) {
-			getLogger().info("Couldn't send Metrics data.");
+		} catch (final IOException ex) {
+			this.getLogger().log(Level.INFO, "Failed to send Metrics data!", ex);
 		}
 	}
 
 	public int secondsUntilNextDay() {
-		int timeStarted = getConfig().getInt("timeStarted");
+		final int timeStarted = this.configuration.getTimeStarted();
 		int secondsSince = (int) ((System.currentTimeMillis() / 1000) - timeStarted);
 
 		while (secondsSince >= 86400) {
@@ -147,29 +137,29 @@ public class PlayTimeLimiter extends JavaPlugin {
 	}
 
 	public String secondsToDaysHoursSecondsString(int secondsToConvert) {
-		int hours = secondsToConvert / 3600;
-		int minutes = (secondsToConvert % 3600) / 60;
-		int seconds = secondsToConvert % 60;
+		final int hours = secondsToConvert / 3600;
+		final int minutes = (secondsToConvert % 3600) / 60;
+		final int seconds = secondsToConvert % 60;
 		return String.format("%02d hours, %02d minutes & %02d seconds", hours,
 				minutes, seconds);
 	}
 
 	public int getTimeAllowedInSeconds() {
-		int timeStarted = getConfig().getInt("timeStarted");
+		int timeStarted = this.configuration.getTimeStarted();
 		int secondsSince = (int) ((System.currentTimeMillis() / 1000) - timeStarted);
 		int secondsAllowed = 0;
 
 		// Add the initial time we give the player at the beginning
-		secondsAllowed += getConfig().getInt("initialTime");
+		secondsAllowed += getConfig().getInt(INITIAL_TIME);
 
 		// Then for each day including the first day (24 hours realtime) add the
 		// set amount of
 		// seconds to the time allowed
 		while (secondsSince >= 0) {
-			if (getConfig().getBoolean("timeTravels")) {
-				secondsAllowed += getConfig().getInt("timePerDay");
+			if (getConfig().getBoolean(TIME_TRAVELS)) {
+				secondsAllowed += getConfig().getInt(TIME_PER_DAY);
 			} else {
-				secondsAllowed = getConfig().getInt("timePerDay");
+				secondsAllowed = getConfig().getInt(TIME_PER_DAY);
 			}
 			secondsSince -= 86400;
 		}
@@ -285,14 +275,14 @@ public class PlayTimeLimiter extends JavaPlugin {
 			return false;
 		} else {
 			this.started = true;
-			String initial = (getConfig().getInt("initialTime") / 60 / 60) + "";
-			String perday = (getConfig().getInt("timePerDay") / 60 / 60) + "";
+			String initial = (getConfig().getInt(INITIAL_TIME) / 60 / 60) + "";
+			String perday = (getConfig().getInt(TIME_PER_DAY) / 60 / 60) + "";
 			getServer().broadcastMessage(
 					ChatColor.GREEN + "Playtime has now started! You have "
 							+ initial
 							+ " hour/s of playtime to start with and " + perday
 							+ " hour/s of playtime added per day!");
-			getConfig().set("timeStarted", (System.currentTimeMillis() / 1000));
+			getConfig().set("timeStarted", Ints.checkedCast(Instant.now().getEpochSecond()));
 			saveConfig();
 			return true;
 		}
