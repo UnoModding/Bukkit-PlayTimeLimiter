@@ -1,6 +1,6 @@
-name: ${project.name}
-main: ${main.class}
-version: ${project.version}
+name: PlayTimeLimiter
+main: unomodding.bukkit.playtimelimiter.PlayTimeLimiter
+version: 0.4.0
 commands:
   playtime:
     description: Commands for the PlayTimeLimiter plugin relating to players time played.

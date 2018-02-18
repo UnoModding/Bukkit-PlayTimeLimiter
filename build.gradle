@@ -1,0 +1,37 @@
+apply plugin: 'java'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+group = 'unomodding.bukkit'
+version = '0.4.0'
+
+repositories {
+    mavenCentral()
+    maven {
+        name 'bukkit'
+        url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
+    }
+    maven {
+        name 'metrics'
+        url 'http://repo.mcstats.org/content/repositories/public'
+    }
+}
+
+dependencies {
+    compile 'org.bukkit:bukkit:1.12.2-R0.1-SNAPSHOT'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Implementation-Title': name,
+                'Implementation-Version': version,
+                'Implementation-Vender': 'UnoModding'
+        )
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.5.1'
+}

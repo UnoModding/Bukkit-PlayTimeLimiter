@@ -6,6 +6,18 @@
  */
 package unomodding.bukkit.playtimelimiter;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import org.bukkit.ChatColor;
+import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.java.JavaPlugin;
+import unomodding.bukkit.playtimelimiter.exceptions.UnknownPlayerException;
+import unomodding.bukkit.playtimelimiter.metrics.MetricsLite;
+import unomodding.bukkit.playtimelimiter.threads.PlayTimeCheckerTask;
+import unomodding.bukkit.playtimelimiter.threads.PlayTimeSaverTask;
+import unomodding.bukkit.playtimelimiter.threads.ShutdownThread;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,20 +27,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import org.bukkit.ChatColor;
-import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.mcstats.Metrics;
-
-import unomodding.bukkit.playtimelimiter.exceptions.UnknownPlayerException;
-import unomodding.bukkit.playtimelimiter.threads.PlayTimeCheckerTask;
-import unomodding.bukkit.playtimelimiter.threads.PlayTimeSaverTask;
-import unomodding.bukkit.playtimelimiter.threads.ShutdownThread;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 /**
  * PlayTimeLimiter plugin for Bukkit
@@ -130,7 +128,7 @@ public class PlayTimeLimiter extends JavaPlugin {
 
 
 		try {
-			Metrics metrics = new Metrics(this);
+			MetricsLite metrics = new MetricsLite(this);
 			metrics.start();
 		} catch (IOException e) {
 			getLogger().info("Couldn't send Metrics data.");
